@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "checksums.h"
+#include "jni_util.h"
 #include "libdeflate/libdeflate.h"
 
 LIBDEFLATEJAVA_PUBLIC JNIEXPORT jint JNICALL

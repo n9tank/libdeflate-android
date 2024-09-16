@@ -18,9 +18,12 @@ package me.steinborn.libdeflate;
 
 
 public class Libdeflate {
-  static {
-   System.loadLibrary("deflate");
-  }
-  public static void ensureAvailable() {
-  }
+ public final static int DEFLATE=0;
+ public final static int ZLIB=1;
+ public final static int GZIP=2;
+ static {
+  System.loadLibrary("deflate");
+ }
+ public static void ensureAvailable() {
+ }
 }

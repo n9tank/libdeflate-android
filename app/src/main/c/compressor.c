@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "jni_util.h"
 #include "common.h"
-#include "compressor.h"
 #include "libdeflate/libdeflate.h"
 
 LIBDEFLATEJAVA_PUBLIC JNIEXPORT jlong JNICALL
@@ -58,10 +58,10 @@ jlong performCompression(jlong ctx, jbyte *inBytes, jint inPos, jint inSize,
     result = libdeflate_zlib_compress(compressor, inStart, inSize, outStart,
                                       outSize);
     break;
- /* case COMPRESSION_TYPE_GZIP:
+  case COMPRESSION_TYPE_GZIP:
     result = libdeflate_gzip_compress(compressor, inStart, inSize, outStart,
                                       outSize);
-    break;*/
+    break;
   }
   return (jlong)result;
 }

@@ -17,7 +17,6 @@ package me.steinborn.libdeflate;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
-import java.util.zip.Deflater;
 
 import static me.steinborn.libdeflate.LibdeflateJavaUtils.byteBufferArrayPosition;
 
@@ -30,20 +29,11 @@ import static me.steinborn.libdeflate.LibdeflateJavaUtils.byteBufferArrayPositio
  * multiple compressors per thread is permissible.
  */
 public class LibdeflateCompressor implements Closeable, AutoCloseable {
- private static final int MINIMUM_COMPRESSION_LEVEL = 0;
- private static final int MAXIMUM_COMPRESSION_LEVEL = 12;
- private static final int DEFAULT_COMPRESSION_LEVEL = 6;
-
  static {
   Libdeflate.ensureAvailable();
  }
-
- final long ctx;
-
- /** Creates a new compressor with the default compression level. */
- public LibdeflateCompressor() {
-  this(Deflater.DEFAULT_COMPRESSION);
- }
+private final long ctx;
+private int mode;
 
  /**
   * Creates a new compressor with the specified compression level.
@@ -51,8 +41,9 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   * @param level the compression level to use, from 0 to 12
   * @throws IllegalArgumentException if the level is not within range
   */
- public LibdeflateCompressor(int level) {
+ public LibdeflateCompressor(int level, int mode) {
   this.ctx = allocate(level);
+  this.mode = mode;
  }
 
  /**
@@ -64,8 +55,8 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   * @return a positive, non-zero integer with the size of the compressed output, or zero if the
   *     given output buffer was too small
   */
- public int compress(byte[] in, byte[] out, int type) {
-  return (int) compressBothHeap(ctx, in, 0, in.length, out, 0, out.length, type);
+ public int compress(byte[] in, byte[] out) {
+  return (int) compressBothHeap(ctx, in, 0, in.length, out, 0, out.length, mode);
  }
 
  /**
@@ -84,8 +75,8 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   *     a negative range
   */
  public int compress(
-  byte[] in, int inOff, int inLen, byte[] out, int outOff, int outLen, int type) {
-  return (int) compressBothHeap(ctx, in, inOff, inLen, out, outOff, outLen, type);
+  byte[] in, int inOff, int inLen, byte[] out, int outOff, int outLen) {
+  return (int) compressBothHeap(ctx, in, inOff, inLen, out, outOff, outLen, mode);
  }
 
  /**
@@ -100,10 +91,8 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   * @return a positive, non-zero integer with the size of the compressed output, or zero if the
   *     given output buffer was too small
   */
- public int compress(ByteBuffer in, ByteBuffer out, int type) {
-  int nativeType = type;
-
-  // Either ByteBuffer could be direct or heap.
+ public int compress(ByteBuffer in, ByteBuffer out) {
+  int nativeType = mode;
   long result;
   int inAvail = in.remaining();
   if (in.isDirect()) {
@@ -149,7 +138,7 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
  }
 
  /** Closes the compressor. Any further operations on the compressor will fail. */
- @Override
+ 
  public void close() {
   free(this.ctx);
  }
