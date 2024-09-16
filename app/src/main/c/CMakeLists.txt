@@ -5,7 +5,7 @@ set(JNI
     checksums.c
     jni_util.c
     jni_util.h
-    #decompressor.c
+    decompressor.c
     compressor.c
     common.h
 )

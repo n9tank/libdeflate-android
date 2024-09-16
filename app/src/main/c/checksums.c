@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "checksums.h"
+#include "jni_util.h"
 #include "libdeflate/libdeflate.h"
 
 LIBDEFLATEJAVA_PUBLIC JNIEXPORT jint JNICALL
@@ -27,6 +27,8 @@ Java_me_steinborn_libdeflate_LibdeflateCRC32_crc32Heap(JNIEnv *env,
     crc32 = (jint)libdeflate_crc32((uint32_t)crc32, (void *)(arrayBytes + off),
                                    len);
     (*env)->ReleasePrimitiveArrayCritical(env, array, arrayBytes, JNI_ABORT);
+  }else {
+  throwException(env, "java/lang/OutOfMemoryError",NULL);
   }
   return crc32;
 }
@@ -44,7 +46,7 @@ Java_me_steinborn_libdeflate_LibdeflateCRC32_crc32Direct(
 
   return (jint)libdeflate_crc32((uint32_t)crc32, (void *)(bufBytes + off), len);
 }
-/*
+
 LIBDEFLATEJAVA_PUBLIC JNIEXPORT jint JNICALL
 Java_me_steinborn_libdeflate_LibdeflateAdler32_adler32Heap(JNIEnv *env,
                                                            jclass klass,
@@ -56,6 +58,8 @@ Java_me_steinborn_libdeflate_LibdeflateAdler32_adler32Heap(JNIEnv *env,
     adler32 = (jint)libdeflate_adler32((uint32_t)adler32,
                                        (void *)(arrayBytes + off), len);
     (*env)->ReleasePrimitiveArrayCritical(env, array, arrayBytes, JNI_ABORT);
+  } else {
+  throwException(env, "java/lang/OutOfMemoryError",NULL);
   }
   return adler32;
 }
@@ -73,4 +77,4 @@ Java_me_steinborn_libdeflate_LibdeflateAdler32_adler32Direct(
 
   return (jint)libdeflate_adler32((uint32_t)adler32, (void *)(bufBytes + off),
                                   len);
-}*/
+}

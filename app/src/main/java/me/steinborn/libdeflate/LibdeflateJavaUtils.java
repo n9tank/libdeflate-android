@@ -18,10 +18,17 @@ package me.steinborn.libdeflate;
 import java.nio.ByteBuffer;
 
 public class LibdeflateJavaUtils {
- public final static int getBufSize(int size, boolean iszilb) {
-  int i=Math.max((size + 4999) / 1000, 5) + size;
+ public final static int getBufSize(int size, int type) {
+  int i=Math.max((size + 4999) / 5000 * 5, 5) + size;
   //b=5000 ((a+b-1)/b)*5+a;
-  if (iszilb)i += 6;
+  switch (type) {
+   case 1:
+    i += 6;
+    break;
+   case 2:
+    i += 18;
+    break;
+  }
   return i;
  }
  public static int byteBufferArrayPosition(ByteBuffer buffer) {
