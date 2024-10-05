@@ -128,15 +128,14 @@ Java_me_steinborn_libdeflate_LibdeflateDecompressor_decompressBothHeap(
     JNIEnv *env, jobject this, jbyteArray in, jint inPos, jint inSize,
     jbyteArray out, jint outPos, jint outSize, jint type, jint knownSize) {
   jbyte *inBytes = (*env)->GetPrimitiveArrayCritical(env, in, 0);
+  if (inBytes == NULL){
+  return -1;
+  }
   jbyte *outBytes = (*env)->GetPrimitiveArrayCritical(env, out, 0);
-
-  if (inBytes == NULL || outBytes == NULL) {
-    if (inBytes != NULL) {
-      (*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
-    }
+  if (outBytes == NULL) {
+  (*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
     return -1;
   }
-
   jlong result =
       performDecompression(env, this, inBytes, inPos, inSize, outBytes, outPos,
                            outSize, type, knownSize);
@@ -144,7 +143,7 @@ Java_me_steinborn_libdeflate_LibdeflateDecompressor_decompressBothHeap(
   // We immediately commit the changes to the output array, but the input array
   // is never touched, so use JNI_ABORT to improve performance a bit.
   (*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
-  (*env)->ReleasePrimitiveArrayCritical(env, in, outBytes, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, out, outBytes, 0);
   return result;
 }
 

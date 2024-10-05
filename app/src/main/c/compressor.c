@@ -71,22 +71,21 @@ Java_me_steinborn_libdeflate_LibdeflateCompressor_compressBothHeap(
     JNIEnv *env, jclass klass, jlong ctx, jbyteArray in, jint inPos,
     jint inSize, jbyteArray out, jint outPos, jint outSize, jint type) {
   jbyte *inBytes = (*env)->GetPrimitiveArrayCritical(env, in, 0);
+  if (inBytes == NULL){
+  return -1;
+  }
   jbyte *outBytes = (*env)->GetPrimitiveArrayCritical(env, out, 0);
-
-  if (inBytes == NULL || outBytes == NULL) {
-    if (inBytes != NULL) {
-      (*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
-    }
+  if (outBytes == NULL) {
+  (*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
     return -1;
   }
-
   jlong result = performCompression(ctx, inBytes, inPos, inSize, outBytes,
                                     outPos, outSize, type);
 
   // We immediately commit the changes to the output array, but the input array
   // is never touched, so use JNI_ABORT to improve performance a bit.
   (*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
-  (*env)->ReleasePrimitiveArrayCritical(env, in, outBytes, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, out, outBytes, 0);
   return (jint)result;
 }
 

@@ -36,7 +36,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
 
  private final long ctx;
  private long availInBytes;
- private int mode;
+ private final int mode;
  /** Creates a new libdeflate decompressor. */
  public LibdeflateDecompressor(int mode) {
   this.ctx = allocate();

@@ -33,7 +33,7 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   Libdeflate.ensureAvailable();
  }
 private final long ctx;
-private int mode;
+private final int mode;
 
  /**
   * Creates a new compressor with the specified compression level.
