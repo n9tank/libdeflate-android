@@ -35,21 +35,19 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
  }
 
  private final long ctx;
- private long availInBytes;
+ private int availInBytes;
  private final int mode;
  /** Creates a new libdeflate decompressor. */
  public LibdeflateDecompressor(int mode) {
   this.ctx = allocate();
   this.mode = mode;
  }
- public long readStreamBytes() {
-    long bytes = availInBytes;
-    if (bytes == -1) {
-      throw new IllegalStateException("No byte array decompression done yet!");
-    }
-    availInBytes = -1;
-    return bytes;
-  }
+ public int readStreamBytes() {
+  int bytes = availInBytes;
+  if (bytes < 0)throw new IllegalStateException("No byte array decompression done yet!");
+  availInBytes = -1;
+  return bytes;
+ }
  /**
   * Decompresses the given {@code in} array into the {@code out} array. This method assumes that
   * the length of {@code out} is the size of the uncompressed output. If this is not true, use
@@ -61,8 +59,8 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   * @throws DataFormatException if the provided data was corrupt, or the data decompressed
   *     successfully but it is less than the size of the output buffer
   */
- public long decompress(byte[] in, byte[] out) throws DataFormatException {
- return decompress(in, out, out.length);
+ public int decompress(byte[] in, byte[] out) throws DataFormatException {
+  return decompress(in, out, out.length);
  }
 
  /**
@@ -76,9 +74,9 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   * @throws DataFormatException if the provided data was corrupt, or the data decompressed
   *     successfully but not to {@code uncompressedSize}
   */
- public long decompress(byte[] in, byte[] out,  int uncompressedSize)
+ public int decompress(byte[] in, byte[] out,  int uncompressedSize)
  throws DataFormatException {
- return decompressBothHeap(
+  return decompressBothHeap(
    in, 0, in.length, out, 0, out.length, mode, uncompressedSize);
  }
 
@@ -97,17 +95,16 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   * @throws DataFormatException if the provided data was corrupt, or the data decompressed
   *     successfully but not to {@code uncompressedSize}
   */
- public long decompress(
+ public int decompress(
   byte[] in,
   int inOff,
   int inLen,
   byte[] out,
   int outOff,
   int outLen,
-
   int uncompressedSize)
  throws DataFormatException {
- return decompressBothHeap(
+  return decompressBothHeap(
    in, inOff, inLen, out, outOff, outLen, mode, uncompressedSize);
  }
 
@@ -125,7 +122,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   *     given output buffer was too small
   * @throws DataFormatException if the provided data was corrupt
   */
- public long decompressUnknownSize(byte[] in, byte[] out)
+ public int decompressUnknownSize(byte[] in, byte[] out)
  throws DataFormatException {
   return decompressBothHeap(in, 0, in.length, out, 0, out.length, mode, -1);
  }
@@ -148,13 +145,13 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   *     given output buffer was too small
   * @throws DataFormatException if the provided data was corrupt
   */
- public long decompressUnknownSize(
+ public int decompressUnknownSize(
   byte[] in, int inOff, int inLen, byte[] out, int outOff, int outLen)
  throws DataFormatException {
   return decompressBothHeap(in, inOff, inLen, out, outOff, outLen, mode, -1);
  }
 
- private long decompress0(
+ private int decompress0(
   ByteBuffer in, ByteBuffer out,  int uncompressedSize)
  throws DataFormatException {
   int nativeType = mode;
@@ -163,7 +160,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   int outAvail = out.remaining();
 
   // Either ByteBuffer could be direct or heap.
-  long outRealSize;
+  int outRealSize;
   if (in.isDirect()) {
    if (out.isDirect()) {
     outRealSize =
@@ -214,12 +211,9 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
      uncompressedSize);
    }
   }
-
-  if (uncompressedSize != -1) {
-   outRealSize = uncompressedSize;
-  }
-  out.position((int) (out.position() + outRealSize));
-  in.position((int) (in.position() + this.readStreamBytes()));
+  if (uncompressedSize != -1)outRealSize = uncompressedSize;
+  out.position(out.position() + outRealSize);
+  in.position(in.position() + this.readStreamBytes());
   return outRealSize;
  }
 
@@ -236,7 +230,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   * @throws DataFormatException if the provided data was corrupt, or the data decompresses to an
   *     invalid size
   */
- public long decompress(ByteBuffer in, ByteBuffer out)
+ public int decompress(ByteBuffer in, ByteBuffer out)
  throws DataFormatException {
   return decompress0(in, out, out.remaining());
  }
@@ -253,7 +247,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   * @throws DataFormatException if the provided data was corrupt, or the data decompresses to an
   *     invalid size
   */
- public long decompress(ByteBuffer in, ByteBuffer out,  int uncompressedSize)
+ public int decompress(ByteBuffer in, ByteBuffer out,  int uncompressedSize)
  throws DataFormatException {
   return decompress0(in, out, uncompressedSize);
  }
@@ -277,12 +271,11 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   * @throws DataFormatException if the provided data was corrupt, or the data decompresses to an
   *     invalid size
   */
- public long decompressUnknownSize(ByteBuffer in, ByteBuffer out)
+ public int decompressUnknownSize(ByteBuffer in, ByteBuffer out)
  throws DataFormatException {
   return decompress0(in, out, -1);
  }
 
- 
  public void close() {
   free(this.ctx);
  }
@@ -293,7 +286,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
 
  private static native void free(long ctx);
 
- private native long decompressBothHeap(
+ private native int decompressBothHeap(
   byte[] in,
   int inPos,
   int inSize,
@@ -304,7 +297,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   int knownSize)
  throws DataFormatException;
 
- private native long decompressOnlyDestinationDirect(
+ private native int decompressOnlyDestinationDirect(
   byte[] in,
   int inPos,
   int inSize,
@@ -315,7 +308,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   int knownSize)
  throws DataFormatException;
 
- private native long decompressOnlySourceDirect(
+ private native int decompressOnlySourceDirect(
   ByteBuffer in,
   int inPos,
   int inSize,
@@ -326,7 +319,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   int knownSize)
  throws DataFormatException;
 
- private native long decompressBothDirect(
+ private native int decompressBothDirect(
   ByteBuffer in,
   int inPos,
   int inSize,

@@ -32,8 +32,8 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
  static {
   Libdeflate.ensureAvailable();
  }
-private final long ctx;
-private final int mode;
+ private final long ctx;
+ private final int mode;
 
  /**
   * Creates a new compressor with the specified compression level.
@@ -56,7 +56,7 @@ private final int mode;
   *     given output buffer was too small
   */
  public int compress(byte[] in, byte[] out) {
-  return (int) compressBothHeap(ctx, in, 0, in.length, out, 0, out.length, mode);
+  return compressBothHeap(ctx, in, 0, in.length, out, 0, out.length, mode);
  }
 
  /**
@@ -76,7 +76,7 @@ private final int mode;
   */
  public int compress(
   byte[] in, int inOff, int inLen, byte[] out, int outOff, int outLen) {
-  return (int) compressBothHeap(ctx, in, inOff, inLen, out, outOff, outLen, mode);
+  return compressBothHeap(ctx, in, inOff, inLen, out, outOff, outLen, mode);
  }
 
  /**
@@ -93,7 +93,7 @@ private final int mode;
   */
  public int compress(ByteBuffer in, ByteBuffer out) {
   int nativeType = mode;
-  long result;
+  int result;
   int inAvail = in.remaining();
   if (in.isDirect()) {
    if (out.isDirect()) {
@@ -131,14 +131,13 @@ private final int mode;
      nativeType);
    }
   }
-
-  out.position((int) (out.position() + result));
+  out.position(out.position() + result);
   in.position(in.position() + inAvail);
-  return (int) result;
+  return result;
  }
 
  /** Closes the compressor. Any further operations on the compressor will fail. */
- 
+
  public void close() {
   free(this.ctx);
  }
@@ -178,10 +177,10 @@ private final int mode;
 
  private static native void free(long ctx);
 
- static native long compressBothHeap(
+ static native int compressBothHeap(
   long ctx, byte[] in, int inPos, int inSize, byte[] out, int outPos, int outSize, int type);
 
- static native long compressOnlyDestinationDirect(
+ static native int compressOnlyDestinationDirect(
   long ctx,
   byte[] in,
   int inPos,
@@ -191,7 +190,7 @@ private final int mode;
   int outSize,
   int type);
 
- static native long compressOnlySourceDirect(
+ static native int compressOnlySourceDirect(
   long ctx,
   ByteBuffer in,
   int inPos,
@@ -201,7 +200,7 @@ private final int mode;
   int outSize,
   int type);
 
- static native long compressBothDirect(
+ static native int compressBothDirect(
   long ctx,
   ByteBuffer in,
   int inPos,
@@ -210,5 +209,4 @@ private final int mode;
   int outPos,
   int outSize,
   int type);
-
 }
