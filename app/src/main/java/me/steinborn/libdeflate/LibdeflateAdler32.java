@@ -67,7 +67,7 @@ public class LibdeflateAdler32 implements Checksum {
     adler32 = 1;
   }
 
-  private static native int adler32Heap(long adler32, byte[] array, int off, int len);
+  public static native int adler32Heap(long adler32, byte[] array, int off, int len);
 
-  private static native int adler32Direct(long adler32, ByteBuffer buf, int off, int len);
+  public static native int adler32Direct(long adler32, ByteBuffer buf, int off, int len);
 }

@@ -67,7 +67,7 @@ public class LibdeflateCRC32 implements Checksum {
   crc32 = 0;
  }
 
- private static native int crc32Heap(long crc32, byte[] array, int off, int len);
+ public static native int crc32Heap(long crc32, byte[] array, int off, int len);
 
- private static native int crc32Direct(long crc32, ByteBuffer buf, int off, int len);
+ public static native int crc32Direct(long crc32, ByteBuffer buf, int off, int len);
 }

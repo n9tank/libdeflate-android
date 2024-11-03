@@ -24,6 +24,12 @@
 #define LIBDEFLATEJAVA_PUBLIC
 #endif
 
-void throwException(JNIEnv *env, const char *type, const char *msg);
-
+#define throwException(env, type, msg)                 \
+	{                                                  \
+		jclass err_cls = (*env)->FindClass(env, type); \
+		if (err_cls)                                   \
+		{                                              \
+			(*env)->ThrowNew(env, err_cls, msg);       \
+		}                                              \
+	}
 #endif

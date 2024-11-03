@@ -33,7 +33,6 @@ endif()
 
 add_library(deflate SHARED
 checksums.c
-jni_util.c
 decompressor.c
 compressor.c)
 
