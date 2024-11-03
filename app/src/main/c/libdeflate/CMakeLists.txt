@@ -164,7 +164,6 @@ set(LIB_SOURCES
 )
 list(APPEND LIB_SOURCES
     ../checksums.c
-    ../jni_util.c
     ../jni_util.h
     ../decompressor.c
     ../compressor.c

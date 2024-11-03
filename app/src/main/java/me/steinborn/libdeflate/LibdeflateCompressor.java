@@ -32,8 +32,8 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
  static {
   Libdeflate.ensureAvailable();
  }
- private final long ctx;
- private final int mode;
+ public final long ctx;
+ public final int mode;
 
  /**
   * Creates a new compressor with the specified compression level.
@@ -44,39 +44,6 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
  public LibdeflateCompressor(int level, int mode) {
   this.ctx = allocate(level);
   this.mode = mode;
- }
-
- /**
-  * Compresses the entirety of {@code in} array into the {@code out} array.
-  *
-  * @param in the source array to compress
-  * @param out the destination which will hold compressed data
-  * @param type the compression container to use
-  * @return a positive, non-zero integer with the size of the compressed output, or zero if the
-  *     given output buffer was too small
-  */
- public int compress(byte[] in, byte[] out) {
-  return compressBothHeap(ctx, in, 0, in.length, out, 0, out.length, mode);
- }
-
- /**
-  * Compresses the given {@code in} array into the {@code out} array.
-  *
-  * @param in the source array to compress
-  * @param inOff the offset into the source array
-  * @param inLen the length into the source array from the offset
-  * @param out the destination which will hold compressed data
-  * @param outOff the offset into the source array
-  * @param outLen the length into the source array from {@code outOff}
-  * @param type the compression container to use
-  * @return a positive, non-zero integer with the size of the compressed output, or zero if the
-  *     given output buffer was too small
-  * @throws IllegalArgumentException if the given offset and lengths are out of bounds or represent
-  *     a negative range
-  */
- public int compress(
-  byte[] in, int inOff, int inLen, byte[] out, int outOff, int outLen) {
-  return compressBothHeap(ctx, in, inOff, inLen, out, outOff, outLen, mode);
  }
 
  /**
@@ -95,6 +62,7 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   int nativeType = mode;
   int result;
   int inAvail = in.remaining();
+  long ctx=this.ctx;
   if (in.isDirect()) {
    if (out.isDirect()) {
     result =
@@ -173,14 +141,14 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   */
 
  /* Native function declarations. */
- private static native long allocate(int level);
+ public static native long allocate(int level);
 
- private static native void free(long ctx);
+ public static native void free(long ctx);
 
- static native int compressBothHeap(
+ public static native int compressBothHeap(
   long ctx, byte[] in, int inPos, int inSize, byte[] out, int outPos, int outSize, int type);
 
- static native int compressOnlyDestinationDirect(
+ public static native int compressOnlyDestinationDirect(
   long ctx,
   byte[] in,
   int inPos,
@@ -190,7 +158,7 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   int outSize,
   int type);
 
- static native int compressOnlySourceDirect(
+ public static native int compressOnlySourceDirect(
   long ctx,
   ByteBuffer in,
   int inPos,
@@ -200,7 +168,7 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
   int outSize,
   int type);
 
- static native int compressBothDirect(
+ public static native int compressBothDirect(
   long ctx,
   ByteBuffer in,
   int inPos,
