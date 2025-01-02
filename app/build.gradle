@@ -21,7 +21,8 @@ namespace 'org.libDeflate'
 
     defaultConfig {
         //applicationId "com.example.application"
-        minSdkVersion 21
+        //minSdkVersion 21
+        minSdkVersion 26
          //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 28
         versionCode 1
