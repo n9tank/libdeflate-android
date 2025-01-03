@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 # Default to a release build.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -61,7 +61,6 @@ if(NOT LIBDEFLATE_BUILD_STATIC_LIB)
 endif()
 
 # Set common C compiler flags for all targets (the library and the programs).
-
 set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -ffunction-sections -fdata-sections")
@@ -70,7 +69,6 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--gc-sections")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
 
 set(CMAKE_C_STANDARD 99)
-
 if(NOT MSVC)
     check_c_compiler_flag(-Wdeclaration-after-statement HAVE_WDECLARATION_AFTER_STATEMENT)
     check_c_compiler_flag(-Wimplicit-fallthrough HAVE_WIMPLICIT_FALLTHROUGH)
@@ -127,7 +125,7 @@ if(UNIX AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
     if(${machine} MATCHES "^(x86_64|i[3-6]86)")
         if(${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 8.1)
             # Set LIBDEFLATE_ASSEMBLER_DOES_NOT_SUPPORT_AVX512VNNI if needed.
-            check_assembler_support(AVX512_VNNI "vpdpbusd %zmm0, %zmm0, %zmm0")
+            check_assembler_support(AVX512VNNI "vpdpbusd %zmm0, %zmm0, %zmm0")
             # Set LIBDEFLATE_ASSEMBLER_DOES_NOT_SUPPORT_VPCLMULQDQ if needed.
             check_assembler_support(VPCLMULQDQ "vpclmulqdq $0, %zmm0, %zmm0, %zmm0")
         endif()
@@ -228,7 +226,7 @@ if(LIBDEFLATE_FREESTANDING)
     list(APPEND LIB_COMPILE_OPTIONS -ffreestanding -nostdlib)
     list(APPEND LIB_LINK_LIBRARIES -ffreestanding -nostdlib)
 endif()
-list(APPEND LIB_COMPILE_OPTIONS $<$<CONFIG:RELEASE>:-s>)
+
 set(LIB_INCLUDE_DIRS
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_FULL_INCLUDEDIR}>)
