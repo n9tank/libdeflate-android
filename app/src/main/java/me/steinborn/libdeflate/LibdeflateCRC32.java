@@ -18,8 +18,6 @@ package me.steinborn.libdeflate;
 import java.nio.ByteBuffer;
 import java.util.zip.Checksum;
 
-import static me.steinborn.libdeflate.LibdeflateJavaUtils.byteBufferArrayPosition;
-
 /**
  * Equivalent to {@link java.util.zip.CRC32}, but uses libdeflate's CRC-32 routines. As a result,
  * performance of this class is likely to be better than the JDK version.
@@ -28,46 +26,33 @@ public class LibdeflateCRC32 implements Checksum {
  static {
   Libdeflate.ensureAvailable();
  }
-
- private int crc32 = 0;
-
- 
+ public int crc32 = 0;
  public void update(int b) {
   byte[] tmp = new byte[] {(byte) b};
   crc32 = crc32Heap(crc32, tmp, 0, 1);
  }
-
  public void update(byte[] b) {
   crc32 = crc32Heap(crc32, b, 0, b.length);
  }
-
- 
  public void update(byte[] b, int off, int len) {
   crc32 = crc32Heap(crc32, b, off, len);
  }
-
  public void update(ByteBuffer buffer) {
   int pos = buffer.position();
   int limit = buffer.limit();
   int remaining = limit - pos;
   if (!buffer.isDirect()) 
-   crc32 = crc32Heap(crc32, buffer.array(), byteBufferArrayPosition(buffer), remaining);
+   crc32 = crc32Heap(crc32, buffer.array(), buffer.arrayOffset() + buffer.position() , remaining);
   else
    crc32 = crc32Direct(crc32, buffer, pos, remaining);
   buffer.position(limit);
  }
-
- 
  public long getValue() {
   return ((long) crc32 & 0xffffffffL);
  }
-
- 
  public void reset() {
   crc32 = 0;
  }
-
- public static native int crc32Heap(long crc32, byte[] array, int off, int len);
-
- public static native int crc32Direct(long crc32, ByteBuffer buf, int off, int len);
+ public static native int crc32Heap(int crc32, byte[] array, int off, int len);
+ public static native int crc32Direct(int crc32, ByteBuffer buf, int off, int len);
 }

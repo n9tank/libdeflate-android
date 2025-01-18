@@ -31,7 +31,4 @@ public class LibdeflateJavaUtils {
   }
   return i;
  }
- public static int byteBufferArrayPosition(ByteBuffer buffer) {
-  return buffer.arrayOffset() + buffer.position();
- }
 }

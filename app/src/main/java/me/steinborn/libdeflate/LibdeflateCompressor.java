@@ -15,12 +15,9 @@
  */
 package me.steinborn.libdeflate;
 
-import java.io.Closeable;
 import java.nio.ByteBuffer;
 
-import static me.steinborn.libdeflate.LibdeflateJavaUtils.byteBufferArrayPosition;
-
-public class LibdeflateCompressor implements Closeable, AutoCloseable {
+public class LibdeflateCompressor implements AutoCloseable {
  static {
   Libdeflate.ensureAvailable();
  }
@@ -29,38 +26,43 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
  public int mode;
 
  public LibdeflateCompressor(int level, int mode) {
-  this.ctx = allocate(lvl = level);
+  long ptr=allocate(lvl = level);
+  if (ptr == 0)throw new OutOfMemoryError();
+  this.ctx = ptr;
   this.mode = mode;
  }
 
  public int compress(ByteBuffer in, ByteBuffer out) {
   int nativeType = mode;
   int result;
-  int inAvail = in.remaining();
+  int inAvail=in.remaining();
+  int outlen=out.remaining();
   long ctx=this.ctx;
+  int inpos=in.position();
+  int outpos=out.position();
   if (in.isDirect()) {
    if (out.isDirect()) {
     result =
      compressBothDirect(
-     ctx, in, in.position(), inAvail, out, out.position(), out.remaining(), nativeType);
+     ctx, in, inpos, inAvail, out, outpos, outlen, nativeType);
    } else {
     result =
      compressOnlySourceDirect(
      ctx,
      in,
-     in.position(),
+     inpos,
      inAvail,
      out.array(),
-     byteBufferArrayPosition(out),
-     out.remaining(),
+     out.arrayOffset() + outpos,
+     outlen,
      nativeType);
    }
   } else {
-   int inPos = byteBufferArrayPosition(in);
+   int inPos = in.arrayOffset() + inpos;
    if (out.isDirect()) {
     result =
      compressOnlyDestinationDirect(
-     ctx, in.array(), inPos, inAvail, out, out.position(), out.remaining(), nativeType);
+     ctx, in.array(), inPos, inAvail, out, outpos, outlen, nativeType);
    } else {
     result =
      compressBothHeap(
@@ -69,13 +71,14 @@ public class LibdeflateCompressor implements Closeable, AutoCloseable {
      inPos,
      inAvail,
      out.array(),
-     byteBufferArrayPosition(out),
-     out.remaining(),
+     out.arrayOffset() + outpos,
+     outlen,
      nativeType);
    }
   }
-  out.position(out.position() + result);
-  in.position(in.position() + inAvail);
+  if (result < 0)throw new OutOfMemoryError();
+  out.position(outpos + result);
+  in.position(inpos + inAvail);
   return result;
  }
 

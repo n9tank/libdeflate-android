@@ -17,21 +17,16 @@
 #include "common.h"
 #include "libdeflate/libdeflate.h"
 
-LIBDEFLATEJAVA_PUBLIC JNIEXPORT jlong JNICALL
+JNIEXPORT jlong JNICALL
 Java_me_steinborn_libdeflate_LibdeflateCompressor_allocate(JNIEnv *env,
 														   jclass klass,
 														   jint level)
 {
 	struct libdeflate_compressor *compressor = libdeflate_alloc_compressor(level);
-	if (compressor == NULL)
-	{
-		throwException(env, "java/lang/OutOfMemoryError", NULL);
-		return 0;
-	}
 	return (jlong)compressor;
 }
 
-LIBDEFLATEJAVA_PUBLIC JNIEXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_me_steinborn_libdeflate_LibdeflateCompressor_free(JNIEnv *env,
 													   jclass klass,
 													   jlong ctx)
@@ -45,7 +40,7 @@ jint performCompression(jlong ctx, void *inStart, jint inSize,
 {
 	struct libdeflate_compressor *compressor =
 		(struct libdeflate_compressor *)ctx;
-	size_t result = 0;
+	size_t result;
 	switch (type)
 	{
 	case COMPRESSION_TYPE_DEFLATE:
@@ -56,7 +51,8 @@ jint performCompression(jlong ctx, void *inStart, jint inSize,
 		result = libdeflate_zlib_compress(compressor, inStart, inSize, outStart,
 										  outSize);
 		break;
-	case COMPRESSION_TYPE_GZIP:
+	default:
+		//case COMPRESSION_TYPE_GZIP:
 		result = libdeflate_gzip_compress(compressor, inStart, inSize, outStart,
 										  outSize);
 		break;
@@ -64,7 +60,7 @@ jint performCompression(jlong ctx, void *inStart, jint inSize,
 	return (jint)result;
 }
 
-LIBDEFLATEJAVA_PUBLIC JNIEXPORT jint JNICALL
+JNIEXPORT jint JNICALL
 Java_me_steinborn_libdeflate_LibdeflateCompressor_compressBothHeap(
 	JNIEnv *env, jclass klass, jlong ctx, jbyteArray in, jint inPos,
 	jint inSize, jbyteArray out, jint outPos, jint outSize, jint type)
@@ -72,15 +68,13 @@ Java_me_steinborn_libdeflate_LibdeflateCompressor_compressBothHeap(
 	jbyte *inBytes = (*env)->GetPrimitiveArrayCritical(env, in, 0);
 	if (inBytes == NULL)
 	{
-		throwException(env, "java/lang/OutOfMemoryError", NULL);
-		return 0;
+		return -1;
 	}
 	jbyte *outBytes = (*env)->GetPrimitiveArrayCritical(env, out, 0);
 	if (outBytes == NULL)
 	{
 		(*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
-		throwException(env, "java/lang/OutOfMemoryError", NULL);
-		return 0;
+		return -1;
 	}
 	jint result = performCompression(ctx, inBytes + inPos, inSize, outBytes + outPos, outSize, type);
 	(*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
@@ -88,7 +82,7 @@ Java_me_steinborn_libdeflate_LibdeflateCompressor_compressBothHeap(
 	return result;
 }
 
-LIBDEFLATEJAVA_PUBLIC JNIEXPORT jint JNICALL
+JNIEXPORT jint JNICALL
 Java_me_steinborn_libdeflate_LibdeflateCompressor_compressBothDirect(
 	JNIEnv *env, jclass klass, jlong ctx, jobject in, jint inPos, jint inSize,
 	jobject out, jint outPos, jint outSize, jint type)
@@ -99,7 +93,7 @@ Java_me_steinborn_libdeflate_LibdeflateCompressor_compressBothDirect(
 							  outSize, type);
 }
 
-LIBDEFLATEJAVA_PUBLIC JNIEXPORT jint JNICALL
+JNIEXPORT jint JNICALL
 Java_me_steinborn_libdeflate_LibdeflateCompressor_compressOnlySourceDirect(
 	JNIEnv *env, jclass klass, jlong ctx, jobject in, jint inPos, jint inSize,
 	jbyteArray out, jint outPos, jint outSize, jint type)
@@ -108,17 +102,16 @@ Java_me_steinborn_libdeflate_LibdeflateCompressor_compressOnlySourceDirect(
 	jbyte *outBytes = (*env)->GetPrimitiveArrayCritical(env, out, 0);
 	if (outBytes == NULL)
 	{
-		throwException(env, "java/lang/OutOfMemoryError", NULL);
-		return 0;
+		return -1;
 	}
 
-	jint result = performCompression(ctx, inBytes + inPos, inSize, outBytes,
-									 outPos + outSize, type);
+	jint result = performCompression(ctx, inBytes + inPos, inSize, outBytes + outPos,
+									 outSize, type);
 	(*env)->ReleasePrimitiveArrayCritical(env, out, outBytes, 0);
 	return result;
 }
 
-LIBDEFLATEJAVA_PUBLIC JNIEXPORT jint JNICALL
+JNIEXPORT jint JNICALL
 Java_me_steinborn_libdeflate_LibdeflateCompressor_compressOnlyDestinationDirect(
 	JNIEnv *env, jclass klass, jlong ctx, jbyteArray in, jint inPos,
 	jint inSize, jobject out, jint outPos, jint outSize, jint type)
@@ -127,32 +120,11 @@ Java_me_steinborn_libdeflate_LibdeflateCompressor_compressOnlyDestinationDirect(
 	jbyte *inBytes = (*env)->GetPrimitiveArrayCritical(env, in, 0);
 	if (outBytes == NULL)
 	{
-		throwException(env, "java/lang/OutOfMemoryError", NULL);
-		return 0;
+		return -1;
 	}
 
-	jint result = performCompression(ctx, inBytes + inPos, inSize, outBytes,
-									 outPos + outSize, type);
+	jint result = performCompression(ctx, inBytes + inPos, inSize, outBytes + outPos,
+									 outSize, type);
 	(*env)->ReleasePrimitiveArrayCritical(env, in, inBytes, JNI_ABORT);
 	return result;
 }
-/*
-LIBDEFLATEJAVA_PUBLIC JNIEXPORT jlong JNICALL
-Java_me_steinborn_libdeflate_LibdeflateCompressor_getCompressBound(
-    JNIEnv *env, jclass klass, jlong ctx, jlong length, jint type) {
-  struct libdeflate_compressor *compressor =
-      (struct libdeflate_compressor *)ctx;
-  size_t result = 0;
-  switch (type) {
-  case COMPRESSION_TYPE_DEFLATE:
-    result = libdeflate_deflate_compress_bound(compressor, length);
-    break;
-  case COMPRESSION_TYPE_ZLIB:
-    result = libdeflate_zlib_compress_bound(compressor, length);
-    break;
- case COMPRESSION_TYPE_GZIP:
-    result = libdeflate_gzip_compress_bound(compressor, length);
-    break;
-  }
-  return (jlong)result;
-}*/

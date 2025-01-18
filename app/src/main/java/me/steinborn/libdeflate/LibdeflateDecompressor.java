@@ -15,55 +15,39 @@
  */
 package me.steinborn.libdeflate;
 
-import java.io.Closeable;
-import java.nio.BufferOverflowException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.zip.DataFormatException;
 
-import static me.steinborn.libdeflate.LibdeflateJavaUtils.byteBufferArrayPosition;
-
-public class LibdeflateDecompressor implements Closeable, AutoCloseable {
+public class LibdeflateDecompressor implements AutoCloseable {
  static {
   Libdeflate.ensureAvailable();
  }
  public final long ctx;
  public int mode;
  public LibdeflateDecompressor(int mode) {
-  this.ctx = allocate();
+  long ptr=allocate();
+  if (ptr == 0)throw new OutOfMemoryError();
+  this.ctx = ptr;
   this.mode = mode;
  }
- public ByteBuffer decompressMalloc(ByteBuffer in, ByteBuffer out) throws Exception {
-  while (true) {
-   int ret=decompress(in, out);
-   if (ret >= 0) {
-    return out;
-   } else {
-    ByteBuffer old=out;
-    out = ByteBuffer.allocateDirect(out.capacity() << 1);
-    old.flip();
-    out.put(old);
-   }
-  }
- }
-
- public int decompress(
-  ByteBuffer in, ByteBuffer out)
- throws DataFormatException {
+ public int decompress(ByteBuffer in, ByteBuffer out)throws IOException {
   int nativeType = mode;
   int inAvail = in.remaining();
   int outAvail = out.remaining();
   long ctx=this.ctx;
   long int64;
+  int inpos=in.position();
+  int outpos=out.position();
   if (in.isDirect()) {
    if (out.isDirect()) {
     int64 =
      decompressBothDirect(
      ctx,
      in,
-     in.position(),
+     inpos,
      inAvail,
      out,
-     out.position(),
+     outpos,
      outAvail,
      nativeType);
    } else {
@@ -71,15 +55,15 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
      decompressOnlySourceDirect(
      ctx,
      in,
-     in.position(),
+     inpos,
      inAvail,
      out.array(),
-     byteBufferArrayPosition(out),
+     out.arrayOffset() + outpos,
      outAvail,
      nativeType);
    }
   } else {
-   int inPos = byteBufferArrayPosition(in);
+   int inPos=inpos + in.arrayOffset();
    if (out.isDirect()) {
     int64 =
      decompressOnlyDestinationDirect(
@@ -88,7 +72,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
      inPos,
      inAvail,
      out,
-     out.position(),
+     outpos,
      outAvail,
      nativeType);
    } else {
@@ -99,24 +83,24 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
      inPos,
      inAvail,
      out.array(),
-     byteBufferArrayPosition(out),
+     out.arrayOffset() + outpos,
      outAvail,
      nativeType);
    }
   }
+  //在jni抛错so文件会变大，况且只有正数范围的话-2
+  if (int64 == -1l)throw new IOException();
+  else if (int64 == -2l)throw new OutOfMemoryError();
   int outRealSize=(int)int64;
-  out.position(out.position() + (outRealSize & 0x7fffffff));
-  in.position(in.position() + (int)(int64 >>> 32));
+  out.position(outpos + (outRealSize & 0x7fffffff));
+  in.position(inpos + (int)(int64 >>> 32));
   return outRealSize;
  }
  public void close() {
   free(this.ctx);
  }
-
  public static native long allocate();
-
  public static native void free(long ctx);
-
  public static native long decompressBothHeap(
   long ctx,
   byte[] in,
@@ -125,8 +109,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   byte[] out,
   int outPos,
   int outSize,
-  int type)
- throws DataFormatException;
+  int type);
 
  public static native long decompressOnlyDestinationDirect(
   long ctx,
@@ -136,8 +119,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   ByteBuffer out,
   int outPos,
   int outSize,
-  int type)
- throws DataFormatException;
+  int type);
 
  public static native long decompressOnlySourceDirect(
   long ctx,
@@ -147,8 +129,7 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   byte[] out,
   int outPos,
   int outSize,
-  int type)
- throws DataFormatException;
+  int type);
 
  public static native long decompressBothDirect(
   long ctx,
@@ -158,6 +139,5 @@ public class LibdeflateDecompressor implements Closeable, AutoCloseable {
   ByteBuffer out,
   int outPos,
   int outSize,
-  int type)
- throws DataFormatException;
+  int type);
 }
