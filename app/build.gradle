@@ -12,7 +12,7 @@ namespace 'org.libDeflate'
 	
 	externalNativeBuild {
         cmake {
-            path "src/main/c/libdeflate/CMakeLists.txt"
+            path "src/main/c/CMakeLists.txt"
             version "3.25.1"
 			
         }

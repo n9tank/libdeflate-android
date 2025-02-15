@@ -69,6 +69,8 @@ jlong performDecompression(jlong ctx,
 	case LIBDEFLATE_BAD_DATA:
 		return -1;
 	case LIBDEFLATE_INSUFFICIENT_SPACE:
+	//return 0x80000000;
+	//省几条汇编？
 		actualOutBytes |= 0x80000000;
 		break;
 	default:
