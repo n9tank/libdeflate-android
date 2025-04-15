@@ -1,9 +1,12 @@
 package me.steinborn.libdeflate;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.*;
 
 public class ObjectPool {
  public static final ConcurrentLinkedQueue<LibdeflateCompressor>[] deflatePool=new ConcurrentLinkedQueue[12];
+ public static final LongAdder deflateNum=new LongAdder();
  public static final ConcurrentLinkedQueue<LibdeflateDecompressor> inflatePool=new ConcurrentLinkedQueue();
+ public static final LongAdder inflateNum=new LongAdder();
  public static LibdeflateCompressor allocDeflate(int lvl, int mode) {
   int in=lvl - 1;
   ConcurrentLinkedQueue<LibdeflateCompressor>[] deflatePool=ObjectPool.deflatePool;
@@ -34,22 +37,30 @@ public class ObjectPool {
  public static void free(LibdeflateDecompressor ctx) {
   inflatePool.add(ctx);
  }
+ public static void addInflateCount(){
+  inflateNum.increment();
+ }
+ public static void addDeflateCount(){
+  deflateNum.increment();
+ }
  public static void deflateGc() {
-  try {
-   for (ConcurrentLinkedQueue<LibdeflateCompressor> list:deflatePool) {
-    if (list != null)
-     GcList(list);
-   }
-  } catch (Exception e) {}
+  deflateNum.decrement();
+  if (deflateNum.sum() > 0)return;
+  for (ConcurrentLinkedQueue<LibdeflateCompressor> list:deflatePool) {
+   if (list != null)
+	GcList(list);
+  }
  }
  public static void inflateGc() {
-  try {
+  inflateNum.decrement();
+  if (inflateNum.sum() <= 0)
    GcList(inflatePool);
-  } catch (Exception e) {}
  }
- public static void GcList(ConcurrentLinkedQueue list) throws Exception {
+ public static void GcList(ConcurrentLinkedQueue list) {
   Object obj;
-  while ((obj = (list.poll())) != null)
-   ((AutoCloseable)obj).close();
+  try{
+   while ((obj = (list.poll())) != null)
+	((AutoCloseable)obj).close();
+  }catch (Exception e) {}
  }
 }
