@@ -8,7 +8,7 @@ namespace 'org.libDeflate'
     buildToolsVersion "35.0.0"
 	
 	//设置NDK版本，需要先在高级设置中安装NDK
-	ndkVersion "27.1.12297006"
+	ndkVersion "29.0.13113456"
 	
 	externalNativeBuild {
         cmake {

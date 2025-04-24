@@ -3,7 +3,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.*;
 
 public class ObjectPool {
- public static final ConcurrentLinkedQueue<LibdeflateCompressor>[] deflatePool=new ConcurrentLinkedQueue[12];
+ public static final ConcurrentLinkedQueue<LibdeflateCompressor>[] deflatePool;
+ static{
+  ConcurrentLinkedQueue<LibdeflateCompressor> pool[]= new ConcurrentLinkedQueue[12];
+  for(int i=0;i<pool.length;i++)
+   pool[i]=new ConcurrentLinkedQueue();
+  deflatePool=pool;
+ }
  public static final LongAdder deflateNum=new LongAdder();
  public static final ConcurrentLinkedQueue<LibdeflateDecompressor> inflatePool=new ConcurrentLinkedQueue();
  public static final LongAdder inflateNum=new LongAdder();
@@ -11,13 +17,6 @@ public class ObjectPool {
   int in=lvl - 1;
   ConcurrentLinkedQueue<LibdeflateCompressor>[] deflatePool=ObjectPool.deflatePool;
   ConcurrentLinkedQueue<LibdeflateCompressor> list = deflatePool[in];
-  if (list == null) {
-   synchronized (deflatePool) {
-    list = deflatePool[in];
-    if (list == null)
-     deflatePool[in] = list = new ConcurrentLinkedQueue();
-   }
-  }
   LibdeflateCompressor obj= list.poll();
   if (obj != null)
    obj.mode = mode;
@@ -44,6 +43,7 @@ public class ObjectPool {
   deflateNum.increment();
  }
  public static void deflateGc() {
+  LongAdder deflateNum=ObjectPool.deflateNum;
   deflateNum.decrement();
   if (deflateNum.sum() > 0)return;
   for (ConcurrentLinkedQueue<LibdeflateCompressor> list:deflatePool) {
@@ -52,6 +52,7 @@ public class ObjectPool {
   }
  }
  public static void inflateGc() {
+  LongAdder inflateNum=ObjectPool.inflateNum;
   inflateNum.decrement();
   if (inflateNum.sum() <= 0)
    GcList(inflatePool);
